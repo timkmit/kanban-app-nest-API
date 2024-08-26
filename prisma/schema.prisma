@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  username       String         @unique
+  password       String
+  boards         Board[]        @relation("UserBoards")
+  sharedBoards   BoardShare[]   @relation("SharedBoards")
+}
+
+model Board {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  description    String?
+  userId         String        @db.ObjectId
+  owner          User          @relation("UserBoards", fields: [userId], references: [id])
+  columns        Column[]      @relation("BoardColumns")
+  boardShares    BoardShare[]  @relation("SharedBoards")
+}
+
+model Column {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  description    String?
+  boardId        String        @db.ObjectId
+  board          Board         @relation("BoardColumns", fields: [boardId], references: [id])
+  tasks          Task[]        @relation("ColumnTasks")
+}
+
+model Task {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  description    String?
+  status         String
+  columnId       String        @db.ObjectId
+  column         Column        @relation("ColumnTasks", fields: [columnId], references: [id])
+  subtasks       Subtask[]     @relation("TaskSubtasks")
+}
+
+model Subtask {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  title          String
+  description    String?
+  status         String
+  taskId         String        @db.ObjectId
+  task           Task          @relation("TaskSubtasks", fields: [taskId], references: [id])
+}
+
+model BoardShare {
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  boardId        String        @db.ObjectId
+  userId         String        @db.ObjectId
+  board          Board         @relation("SharedBoards", fields: [boardId], references: [id])
+  user           User          @relation("SharedBoards", fields: [userId], references: [id])
+}
