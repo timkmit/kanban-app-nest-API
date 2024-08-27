@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   server:
@@ -6,7 +6,7 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      - mongo
     env_file:
       - .env
     volumes:
@@ -24,5 +24,17 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
 
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_DATABASE: auth-kanban
+      MONGO_INITDB_ROOT_USERNAME: timkmitdb
+      MONGO_INITDB_ROOT_PASSWORD: 65876587
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
 volumes:
   public-data:
+  mongo-data:
