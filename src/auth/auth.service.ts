@@ -7,8 +7,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async validateUser(usernameOrEmail: string, pass: string): Promise<any> {
@@ -22,14 +22,17 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { username: user.username, email: user.email, sub: user.id };
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      user,
+      access_token,
     };
   }
 
-  async register(user: CreateUserDto) {
-    const existingUser = await this.usersService.findOne(user.username);
-    const existingEmail = await this.usersService.findByEmail(user.email);
+  async register(createUserDto: CreateUserDto) {
+    const existingUser = await this.usersService.findOne(createUserDto.username);
+    const existingEmail = await this.usersService.findByEmail(createUserDto.email);
 
     if (existingUser) {
       throw new ConflictException('Username already exists');
@@ -38,14 +41,21 @@ export class AuthService {
       throw new ConflictException('Email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const newUser = await this.usersService.create({
-      username: user.username,
-      email: user.email,
+      username: createUserDto.username,
+      email: createUserDto.email,
       password: hashedPassword,
     });
 
-    const { password, ...result } = newUser;
-    return result;
+    const payload = { username: newUser.username, email: newUser.email, sub: newUser.id };
+    const access_token = this.jwtService.sign(payload);
+
+    const { password, ...userWithoutPassword } = newUser;
+
+    return {
+      user: userWithoutPassword,
+      access_token,
+    };
   }
 }
