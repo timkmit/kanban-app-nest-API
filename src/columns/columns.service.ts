@@ -7,7 +7,6 @@ export class ColumnsService {
   constructor(private prisma: PrismaService) {}
 
   async createColumn(userId: string, boardId: string, title: string, description: string): Promise<Column> {
-    // Проверка доступа к доске
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
       include: { boardShares: true },
@@ -27,7 +26,6 @@ export class ColumnsService {
   }
 
   async getColumnsByBoard(userId: string, boardId: string): Promise<Column[]> {
-    // Проверка доступа к доске
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
       include: { boardShares: true },
@@ -42,8 +40,24 @@ export class ColumnsService {
     });
   }
 
+  async updateColumn(userId: string, columnId: string, title?: string, description?: string): Promise<Column> {
+    const column = await this.prisma.column.findUnique({ where: { id: columnId } });
+    const board = await this.prisma.board.findUnique({ where: { id: column.boardId } });
+
+    if (!column || board.userId !== userId) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    return this.prisma.column.update({
+      where: { id: columnId },
+      data: {
+        title: title ?? column.title,
+        description: description ?? column.description,
+      },
+    });
+  }
+
   async deleteColumn(userId: string, columnId: string, boardId: string): Promise<void> {
-    // Проверка доступа к доске
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
       include: { boardShares: true },

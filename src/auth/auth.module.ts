@@ -12,8 +12,8 @@ import { UsersModule } from '../users/users.module';
     UsersModule,
     PassportModule,
     JwtModule.register({
-      secret: 'yourSecretKey', // вынести в переменные окружения 
-      signOptions: { expiresIn: '60m' },
+      secret: process.env.JWT_SECRET || 'defaultSecretKey',
+      signOptions: { expiresIn: '360m' },
     }),
   ],
   providers: [AuthService, JwtStrategy, LocalStrategy], 

@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Task } from '@prisma/client';
 
@@ -34,6 +34,41 @@ export class TasksService {
 
     await this.prisma.task.delete({
       where: { id: taskId },
+    });
+  }
+
+  async updateTask(taskId: string, userId: string, title?: string, description?: string, status?: string): Promise<Task> {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const column = await this.prisma.column.findUnique({
+      where: { id: task.columnId },
+    });
+
+    if (!column) {
+      throw new NotFoundException('Column not found');
+    }
+
+    const board = await this.prisma.board.findUnique({
+      where: { id: column.boardId },
+    });
+
+    if (board.userId !== userId) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    return this.prisma.task.update({
+      where: { id: taskId },
+      data: {
+        title,
+        description,
+        status,
+      },
     });
   }
 }

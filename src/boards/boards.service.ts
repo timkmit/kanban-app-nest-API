@@ -1,6 +1,8 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Board } from '@prisma/client';
+import { CreateBoardDto } from './dto/create-board.dto';
+import { UpdateBoardDto } from './dto/update-board.dto';
 
 @Injectable()
 export class BoardsService {
@@ -15,7 +17,7 @@ export class BoardsService {
       data: {
         title: title,
         description: description,
-        userId: userId, // Это правильное поле
+        userId: userId, 
       },
     });
   }
@@ -61,7 +63,37 @@ export class BoardsService {
     });
   }
 
-  async shareBoard(boardId: string, ownerId: string, userId: string): Promise<void> {
+  async getUserBoardsWithDetails(userId: string): Promise<CreateBoardDto[]> {
+    return this.prisma.board.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        columns: {
+          include: {
+            tasks: {
+              include: {
+                subtasks: true,
+              },
+            },
+          },
+        },
+        boardShares: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+  }
+
+  async shareBoard(boardId: string, ownerId: string, email: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     const board = await this.prisma.board.findUnique({ where: { id: boardId } });
 
     if (!board || board.userId !== ownerId) {
@@ -71,10 +103,32 @@ export class BoardsService {
     await this.prisma.boardShare.create({
       data: {
         boardId,
-        userId,
+        userId: user.id,
       },
     });
   }
+
+  async updateBoard(boardId: string, userId: string, updateBoardDto: UpdateBoardDto): Promise<Board> {
+    const { title, description } = updateBoardDto;
+
+    // Найти доску по ID
+    const board = await this.prisma.board.findUnique({
+      where: { id: boardId },
+    });
+
+    if (!board || board.userId !== userId) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    return this.prisma.board.update({
+      where: { id: boardId },
+      data: {
+        title: title ?? board.title,
+        description: description ?? board.description,
+      },
+    });
+  }
+
 
   async deleteBoard(boardId: string, userId: string): Promise<void> {
     const board = await this.prisma.board.findUnique({

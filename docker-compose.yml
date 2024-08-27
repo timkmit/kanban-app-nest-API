@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  server:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - public-data:/app/public
+    restart: always
+    command: ["sh", "-c", "npm run build && npm start"]
+
+  nginx:
+    depends_on:
+      - server
+    image: nginx
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+
+volumes:
+  public-data:
