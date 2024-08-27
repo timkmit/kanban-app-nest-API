@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -34,7 +34,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('profile')
+  @Get('profile')
   @ApiOperation({ summary: 'Get user profile', description: 'Returns the profile of the authenticated user.' })
   @ApiResponse({ status: 200, description: 'User profile returned.', type: UserProfileDto })
   @ApiResponse({ status: 401, description: 'Unauthorized: Invalid or missing token.' })
