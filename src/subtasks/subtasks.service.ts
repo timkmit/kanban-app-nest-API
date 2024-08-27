@@ -29,7 +29,17 @@ export class SubtasksService {
     const column = await this.prisma.column.findUnique({ where: { id: task.columnId } });
     const board = await this.prisma.board.findUnique({ where: { id: column.boardId } });
 
-    if (!subtask || !task || board.userId !== userId) {
+    if (!subtask) {
+        console.log(`Subtask not found: ${subtaskId}`);
+        throw new ForbiddenException('Subtask not found');
+      }
+      
+      if (!task) {
+        console.log(`Task not found: ${taskId}`);
+        throw new ForbiddenException('Task not found');
+      }
+
+    if (board.userId !== userId) {
       throw new ForbiddenException('Access Denied');
     }
 
