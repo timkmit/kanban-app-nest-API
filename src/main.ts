@@ -15,6 +15,14 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document); 
 
+  app.use((req, res, next) => {
+    if (req.originalUrl === '/') {
+      res.redirect('/api');
+    } else {
+      next();
+    }
+  });
+
   await app.listen(3000);
 }
 bootstrap();
