@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards, Get, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Get, BadRequestException, UnauthorizedException, HttpCode } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -23,6 +23,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Login', description: 'Logs in a user and returns user details with JWT token.' })
   @ApiBody({ 
     type: LoginDto, 
@@ -42,45 +43,39 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized: Invalid credentials.' })
   async login(@Body() loginDto: LoginDto) {
     const { username, email, password } = loginDto;
-  
-    // Проверяем наличие хотя бы одного из полей
+
     if (!username && !email) {
       throw new BadRequestException('Either username or email must be provided');
     }
-  
-    // Проверяем, что предоставлен только один из параметров
+
     if (username && email) {
       throw new BadRequestException('Use only one of the parameters: username or email');
     }
-  
-    // Определяем, что именно предоставлено
+
+
     let user;
     if (username) {
       if (this.isEmail(username)) {
         throw new BadRequestException('Provided username cannot be an email address');
       }
-      // Проверяем пользователя по username
+
       user = await this.authService.validateUser(username, password);
     } else if (email) {
       if (!this.isEmail(email)) {
         throw new BadRequestException('Provided email is not in a valid email format');
       }
-      // Проверяем пользователя по email
+
       user = await this.authService.validateUser(email, password);
     }
-  
-    // Проверяем, что пользователь найден и аутентифицирован
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-  
+
     return this.authService.login(user);
   }
-  
-  // Метод для проверки формата email
+
   private isEmail(value: string): boolean {
-    // Простейшая проверка на email
-    // Можно использовать более сложное регулярное выражение при необходимости
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(value);
   }
