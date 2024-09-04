@@ -24,23 +24,65 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login', description: 'Logs in a user and returns user details with JWT token.' })
-  @ApiBody({ type: LoginDto, description: 'Data required to login' })
+  @ApiBody({ 
+    type: LoginDto, 
+    description: 'Data required to login', 
+    examples: {
+      default: {
+        summary: 'Email and Password',
+        value: {
+          email: 'testuser@mail.ru',
+          password: 'password123'
+        }
+      }
+    }
+  })
   @ApiResponse({ status: 200, description: 'Successfully logged in and user details with token returned.', type: LoginResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad Request: Incorrect input data.' })
   @ApiResponse({ status: 401, description: 'Unauthorized: Invalid credentials.' })
   async login(@Body() loginDto: LoginDto) {
     const { username, email, password } = loginDto;
-
+  
+    // Проверяем наличие хотя бы одного из полей
     if (!username && !email) {
       throw new BadRequestException('Either username or email must be provided');
     }
-    const usernameOrEmail = username || email;
-
-    const user = await this.authService.validateUser(usernameOrEmail, password);
-
+  
+    // Проверяем, что предоставлен только один из параметров
+    if (username && email) {
+      throw new BadRequestException('Use only one of the parameters: username or email');
+    }
+  
+    // Определяем, что именно предоставлено
+    let user;
+    if (username) {
+      if (this.isEmail(username)) {
+        throw new BadRequestException('Provided username cannot be an email address');
+      }
+      // Проверяем пользователя по username
+      user = await this.authService.validateUser(username, password);
+    } else if (email) {
+      if (!this.isEmail(email)) {
+        throw new BadRequestException('Provided email is not in a valid email format');
+      }
+      // Проверяем пользователя по email
+      user = await this.authService.validateUser(email, password);
+    }
+  
+    // Проверяем, что пользователь найден и аутентифицирован
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
+  
     return this.authService.login(user);
+  }
+  
+  // Метод для проверки формата email
+  private isEmail(value: string): boolean {
+    // Простейшая проверка на email
+    // Можно использовать более сложное регулярное выражение при необходимости
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value);
   }
 
   @UseGuards(JwtAuthGuard)
