@@ -1,6 +1,5 @@
-import { Controller, Post, Body, Request, UseGuards, Get } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Get, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ApiOperation, ApiResponse, ApiTags, ApiBody } from '@nestjs/swagger';
@@ -23,14 +22,25 @@ export class AuthController {
     return this.authService.register(createUserDto);
   }
 
-  @UseGuards(LocalAuthGuard)
   @Post('login')
   @ApiOperation({ summary: 'Login', description: 'Logs in a user and returns user details with JWT token.' })
   @ApiBody({ type: LoginDto, description: 'Data required to login' })
   @ApiResponse({ status: 200, description: 'Successfully logged in and user details with token returned.', type: LoginResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized: Invalid credentials.' })
-  async login(@Request() req) {
-    return this.authService.login(req.user);
+  async login(@Body() loginDto: LoginDto) {
+    const { username, email, password } = loginDto;
+
+    if (!username && !email) {
+      throw new BadRequestException('Either username or email must be provided');
+    }
+    const usernameOrEmail = username || email;
+
+    const user = await this.authService.validateUser(usernameOrEmail, password);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return this.authService.login(user);
   }
 
   @UseGuards(JwtAuthGuard)
