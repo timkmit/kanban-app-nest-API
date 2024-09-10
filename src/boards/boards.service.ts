@@ -87,6 +87,39 @@ export class BoardsService {
     });
   }
 
+  async getBoardByIdWithDetails(boardId: string, userId: string): Promise<any> {
+    const board = await this.prisma.board.findUnique({
+      where: { id: boardId },
+      include: {
+        columns: {
+          include: {
+            tasks: {
+              include: {
+                subtasks: true,
+              },
+            },
+          },
+        },
+        boardShares: {
+          select: {
+            userId: true,
+          },
+        },
+      },
+    });
+  
+    if (!board) {
+      throw new NotFoundException('Board not found');
+    }
+  
+    if (board.userId !== userId && !board.boardShares.some(share => share.userId === userId)) {
+      throw new ForbiddenException('Access denied');
+    }
+  
+    return board;
+  }
+
+
   async shareBoard(boardId: string, ownerId: string, email: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     

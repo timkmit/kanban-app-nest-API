@@ -52,6 +52,17 @@ export class BoardsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':boardId')
+  @ApiOperation({ summary: 'Get a board with all its details', description: 'Returns the board with all its related columns, tasks, and subtasks by board ID.' })
+  @ApiParam({ name: 'boardId', description: 'ID of the board to retrieve' })
+  @ApiResponse({ status: 200, description: 'Board with all related details retrieved.' })
+  @ApiResponse({ status: 403, description: 'Access forbidden.' })
+  @ApiResponse({ status: 404, description: 'Board not found.' })
+  async getBoardById(@Param('boardId') boardId: string, @Request() req) {
+    return this.boardsService.getBoardByIdWithDetails(boardId, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post('share/:boardId')
   @ApiOperation({ summary: 'Share a board', description: 'Shares a board with another user via email.' })
   @ApiParam({ name: 'boardId', description: 'ID of the board to be shared' })
