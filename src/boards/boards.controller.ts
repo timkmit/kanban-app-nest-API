@@ -44,8 +44,71 @@ export class BoardsController {
 
   @UseGuards(JwtAuthGuard)
   @Get('details')
-  @ApiOperation({ summary: 'Get detailed user boards', description: 'Returns a list of boards for the current user with all related details.' })
-  @ApiResponse({ status: 200, description: 'List of detailed boards successfully retrieved.', type: [CreateBoardDto] })
+  @ApiOperation({ 
+    summary: 'Get detailed user boards', 
+    description: 'Returns a list of boards for the current user with all related details, including columns and tasks.' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of detailed boards successfully retrieved.',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: '66dff2fcd03064c7066dba1e' },
+          title: { type: 'string', example: 'Project Management Board' },
+          description: { type: 'string', example: 'A board for managing project tasks and progress.' },
+          userId: { type: 'string', example: '66d801e783ba6b9add83b7f3' },
+          columns: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', example: '66dff2fcd03064c7066dba1f' },
+                title: { type: 'string', example: 'To Do' },
+                description: { type: 'string', example: 'Tasks that need to be done.' },
+                boardId: { type: 'string', example: '66dff2fcd03064c7066dba1e' },
+                tasks: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', example: 'task1' },
+                      title: { type: 'string', example: 'Task 1' },
+                      description: { type: 'string', example: 'Description for task 1' },
+                      status: { type: 'string', example: 'Pending' },
+                      subtasks: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string', example: 'subtask1' },
+                            title: { type: 'string', example: 'Subtask 1' },
+                            description: { type: 'string', example: 'Subtask 1 description' },
+                            status: { type: 'string', example: 'Not Started' }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          boardShares: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                userId: { type: 'string', example: 'user2Id' }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
   @ApiResponse({ status: 403, description: 'Access forbidden.' })
   async getUserBoardsWithDetails(@Request() req): Promise<CreateBoardDto[]> {
     return this.boardsService.getUserBoardsWithDetails(req.user.userId);
@@ -53,9 +116,70 @@ export class BoardsController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':boardId')
-  @ApiOperation({ summary: 'Get a board with all its details', description: 'Returns the board with all its related columns, tasks, and subtasks by board ID.' })
-  @ApiParam({ name: 'boardId', description: 'ID of the board to retrieve' })
-  @ApiResponse({ status: 200, description: 'Board with all related details retrieved.' })
+  @ApiOperation({ 
+    summary: 'Get a board with all its details', 
+    description: 'Returns the board with all its related columns, tasks, and subtasks by board ID.' 
+  })
+  @ApiParam({ 
+    name: 'boardId', 
+    description: 'ID of the board to retrieve' 
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Board with all related details retrieved.',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: '66dff2fcd03064c7066dba1e' },
+        title: { type: 'string', example: 'Project Board' },
+        description: { type: 'string', example: 'This is the board description' },
+        columns: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'col1' },
+              title: { type: 'string', example: 'To Do' },
+              description: { type: 'string', example: 'Tasks to be done' },
+              tasks: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string', example: 'task1' },
+                    title: { type: 'string', example: 'Task 1' },
+                    description: { type: 'string', example: 'Description for task 1' },
+                    status: { type: 'string', example: 'Pending' },
+                    subtasks: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          id: { type: 'string', example: 'subtask1' },
+                          title: { type: 'string', example: 'Subtask 1' },
+                          description: { type: 'string', example: 'Subtask 1 description' },
+                          status: { type: 'string', example: 'Not Started' }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        boardShares: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              userId: { type: 'string', example: 'user2Id' }
+            }
+          }
+        }
+      }
+    }
+  })
   @ApiResponse({ status: 403, description: 'Access forbidden.' })
   @ApiResponse({ status: 404, description: 'Board not found.' })
   async getBoardById(@Param('boardId') boardId: string, @Request() req) {
