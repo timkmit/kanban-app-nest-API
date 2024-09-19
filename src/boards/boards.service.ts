@@ -161,18 +161,20 @@ export class BoardsService {
       },
     });
   }
+
   async updateBoardWithColumns(boardId: string, userId: string, updateBoardDto: UpdateBoardDto, columns: { id?: string; title: string; description?: string }[]): Promise<Board> {
     const { title, description } = updateBoardDto;
-
+  
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
     });
-
+  
     if (!board || board.userId !== userId) {
       throw new ForbiddenException('Access Denied');
     }
-
+  
     return this.prisma.$transaction(async (prisma) => {
+
       const updatedBoard = await prisma.board.update({
         where: { id: boardId },
         data: {
@@ -180,12 +182,12 @@ export class BoardsService {
           description: description ?? board.description,
         },
       });
-
+  
       await prisma.column.deleteMany({
         where: { boardId: boardId },
       });
-
-      const columnPromises = columns.map(column => {
+  
+      const columnPromises = columns.map((column) => {
         if (column.id) {
 
           return prisma.column.upsert({
@@ -197,23 +199,37 @@ export class BoardsService {
             create: {
               title: column.title,
               description: column.description,
-              boardId: boardId, 
+              boardId: boardId,
             },
           });
         } else {
+
           return prisma.column.create({
             data: {
               title: column.title,
               description: column.description,
-              boardId: boardId, 
+              boardId: boardId,
             },
           });
         }
       });
-
+  
       await Promise.all(columnPromises);
-
-      return updatedBoard;
+  
+      return prisma.board.findUnique({
+        where: { id: updatedBoard.id },
+        include: {
+          columns: {
+            include: {
+              tasks: {
+                include: {
+                  subtasks: true, 
+                },
+              },
+            },
+          },
+        },
+      });
     });
   }
 
