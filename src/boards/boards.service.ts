@@ -162,7 +162,12 @@ export class BoardsService {
     });
   }
 
-  async updateBoardWithColumns(boardId: string, userId: string, updateBoardDto: UpdateBoardDto, columns: { id?: string; title: string; description?: string }[]): Promise<Board> {
+  async updateBoardWithColumns(
+    boardId: string,
+    userId: string,
+    updateBoardDto: UpdateBoardDto,
+    columns: { id?: string; title: string; description?: string }[]
+  ): Promise<Board> {
     const { title, description } = updateBoardDto;
   
     const board = await this.prisma.board.findUnique({
@@ -174,7 +179,6 @@ export class BoardsService {
     }
   
     return this.prisma.$transaction(async (prisma) => {
-
       const updatedBoard = await prisma.board.update({
         where: { id: boardId },
         data: {
@@ -183,27 +187,29 @@ export class BoardsService {
         },
       });
   
+      const columnIds = columns.map((column) => column.id).filter(Boolean);
+  
+      // Удаление всех колонок, которых нет в новом массиве columns
       await prisma.column.deleteMany({
-        where: { boardId: boardId },
+        where: {
+          boardId: boardId,
+          id: { notIn: columnIds }, // Удаляем только те, что не были переданы
+        },
       });
   
+      // Обработка создания или обновления колонок
       const columnPromises = columns.map((column) => {
         if (column.id) {
-
-          return prisma.column.upsert({
+          // Обновляем существующую колонку без изменения ее id
+          return prisma.column.update({
             where: { id: column.id },
-            update: {
+            data: {
               title: column.title,
               description: column.description,
-            },
-            create: {
-              title: column.title,
-              description: column.description,
-              boardId: boardId,
             },
           });
         } else {
-
+          // Создаем новую колонку
           return prisma.column.create({
             data: {
               title: column.title,
@@ -223,7 +229,7 @@ export class BoardsService {
             include: {
               tasks: {
                 include: {
-                  subtasks: true, 
+                  subtasks: true,
                 },
               },
             },
