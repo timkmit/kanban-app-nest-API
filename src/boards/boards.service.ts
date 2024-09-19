@@ -188,19 +188,17 @@ export class BoardsService {
       });
   
       const columnIds = columns.map((column) => column.id).filter(Boolean);
-  
-      // Удаление всех колонок, которых нет в новом массиве columns
+
       await prisma.column.deleteMany({
         where: {
           boardId: boardId,
-          id: { notIn: columnIds }, // Удаляем только те, что не были переданы
+          id: { notIn: columnIds }, 
         },
       });
-  
-      // Обработка создания или обновления колонок
+
       const columnPromises = columns.map((column) => {
         if (column.id) {
-          // Обновляем существующую колонку без изменения ее id
+
           return prisma.column.update({
             where: { id: column.id },
             data: {
@@ -209,7 +207,7 @@ export class BoardsService {
             },
           });
         } else {
-          // Создаем новую колонку
+
           return prisma.column.create({
             data: {
               title: column.title,
