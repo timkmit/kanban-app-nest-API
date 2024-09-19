@@ -161,7 +161,61 @@ export class BoardsService {
       },
     });
   }
+  async updateBoardWithColumns(boardId: string, userId: string, updateBoardDto: UpdateBoardDto, columns: { id?: string; title: string; description?: string }[]): Promise<Board> {
+    const { title, description } = updateBoardDto;
 
+    const board = await this.prisma.board.findUnique({
+      where: { id: boardId },
+    });
+
+    if (!board || board.userId !== userId) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    return this.prisma.$transaction(async (prisma) => {
+      const updatedBoard = await prisma.board.update({
+        where: { id: boardId },
+        data: {
+          title: title ?? board.title,
+          description: description ?? board.description,
+        },
+      });
+
+      await prisma.column.deleteMany({
+        where: { boardId: boardId },
+      });
+
+      const columnPromises = columns.map(column => {
+        if (column.id) {
+
+          return prisma.column.upsert({
+            where: { id: column.id },
+            update: {
+              title: column.title,
+              description: column.description,
+            },
+            create: {
+              title: column.title,
+              description: column.description,
+              boardId: boardId, 
+            },
+          });
+        } else {
+          return prisma.column.create({
+            data: {
+              title: column.title,
+              description: column.description,
+              boardId: boardId, 
+            },
+          });
+        }
+      });
+
+      await Promise.all(columnPromises);
+
+      return updatedBoard;
+    });
+  }
 
   async deleteBoard(boardId: string, userId: string): Promise<void> {
     const board = await this.prisma.board.findUnique({

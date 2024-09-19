@@ -218,6 +218,38 @@ export class BoardsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch('update-with-columns/:boardId')
+  @ApiOperation({ summary: 'Update a board with columns', description: 'Updates the board and its columns. If you specified an ID, the column is updated, if not, it is created.' })
+  @ApiParam({ name: 'boardId', description: 'ID of the board to be updated' })
+  @ApiBody({
+    description: 'Data required to update the board and its columns',
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', example: 'Updated Board Title' },
+        description: { type: 'string', example: 'Updated Board Description' },
+        columns: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'columnId', nullable: true },
+              title: { type: 'string', example: 'New Column Title' },
+              description: { type: 'string', example: 'New Column Description', nullable: true },
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 200, description: 'Board and columns successfully updated.' })
+  @ApiResponse({ status: 403, description: 'Access forbidden.' })
+  async updateBoardWithColumns(@Param('boardId') boardId: string, @Body() body, @Request() req) {
+    const { title, description, columns } = body;
+    return this.boardsService.updateBoardWithColumns(boardId, req.user.userId, { title, description }, columns);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete(':boardId')
   @ApiOperation({ summary: 'Delete a board', description: 'Deletes the user\'s board.' })
   @ApiParam({ name: 'boardId', description: 'ID of the board to be deleted' })
