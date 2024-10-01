@@ -241,16 +241,37 @@ export class BoardsService {
     const board = await this.prisma.board.findUnique({
       where: { id: boardId },
     });
-
+  
     if (!board || board.userId !== userId) {
       throw new ForbiddenException('Access Denied');
     }
+  
+    await this.prisma.subtask.deleteMany({
+      where: {
+        task: {
+          column: {
+            boardId: boardId,
+          },
+        },
+      },
+    });
+
+    await this.prisma.task.deleteMany({
+      where: {
+        column: {
+          boardId: boardId,
+        },
+      },
+    });
+
+    await this.prisma.column.deleteMany({
+      where: { boardId: boardId },
+    });
 
     await this.prisma.boardShare.deleteMany({
       where: { boardId: boardId },
     });
 
-  
     await this.prisma.board.delete({
       where: { id: boardId },
     });
