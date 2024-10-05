@@ -83,7 +83,7 @@ export class TasksService {
 
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
-      include: { subtasks: true }, // Загружаем подзадачи для сравнения
+      include: { subtasks: true },
     });
 
     if (!task) {
@@ -107,7 +107,7 @@ export class TasksService {
     }
 
     return this.prisma.$transaction(async (prisma) => {
-      // Обновляем задачу
+
       const updatedTask = await prisma.task.update({
         where: { id: taskId },
         data: {
@@ -119,18 +119,16 @@ export class TasksService {
 
       const subtaskIds = subtasks.map((subtask) => subtask.id).filter(Boolean);
 
-      // Удаляем подзадачи, которых нет в запросе
       await prisma.subtask.deleteMany({
         where: {
           taskId: taskId,
-          id: { notIn: subtaskIds }, // Удаляем все подзадачи, которых нет в запросе
+          id: { notIn: subtaskIds },
         },
       });
 
-      // Обрабатываем подзадачи: создаем новые или обновляем существующие
       const subtaskPromises = subtasks.map((subtask) => {
         if (subtask.id) {
-          // Обновляем подзадачи, если есть id
+
           return prisma.subtask.update({
             where: { id: subtask.id },
             data: {
@@ -140,7 +138,6 @@ export class TasksService {
             },
           });
         } else {
-          // Создаем подзадачи, если нет id
           return prisma.subtask.create({
             data: {
               title: subtask.title,
