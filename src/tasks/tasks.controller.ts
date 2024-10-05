@@ -46,6 +46,45 @@ export class TasksController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch('update-with-subtasks/:taskId')
+  @ApiOperation({ summary: 'Update a task with subtasks', description: 'Updates the task and its subtasks. If you specify an ID, the subtask is updated; if not, it is created. If a subtask in the database is missing from the request, it is deleted.' })
+  @ApiParam({ name: 'taskId', description: 'ID of the task to be updated' })
+  @ApiBody({
+    description: 'Data required to update the task and its subtasks',
+    schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', example: 'Updated Task Title' },
+        description: { type: 'string', example: 'Updated Task Description' },
+        status: { type: 'string', example: 'In Progress' },
+        subtasks: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'subtaskId', nullable: true },
+              title: { type: 'string', example: 'New Subtask Title' },
+              description: { type: 'string', example: 'New Subtask Description', nullable: true },
+              status: { type: 'string', example: 'Completed' },
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 200, description: 'Task and subtasks successfully updated.' })
+  @ApiResponse({ status: 403, description: 'Access forbidden.' })
+  @ApiResponse({ status: 404, description: 'Task not found.' })
+  async updateTaskWithSubtasks(
+    @Param('taskId') taskId: string,
+    @Request() req,
+    @Body() body,
+  ) {
+    const { title, description, status, subtasks } = body;
+    return this.tasksService.updateTaskWithSubtasks(taskId, req.user.userId, { title, description, status }, subtasks);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete(':taskId')
   @ApiOperation({ summary: 'Delete a task', description: 'Deletes a task from a column.' })
   @ApiParam({ name: 'taskId', description: 'ID of the task to be deleted' })
