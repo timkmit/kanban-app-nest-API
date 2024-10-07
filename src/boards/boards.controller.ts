@@ -86,7 +86,7 @@ export class BoardsController {
                             id: { type: 'string', example: 'subtask1' },
                             title: { type: 'string', example: 'Subtask 1' },
                             description: { type: 'string', example: 'Subtask 1 description' },
-                            status: { type: 'string', example: 'Not Started' }
+                            isDone: { type: 'boolean', example: false }
                           }
                         }
                       }
