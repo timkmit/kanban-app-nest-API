@@ -56,7 +56,7 @@ export class TasksController {
       properties: {
         title: { type: 'string', example: 'Updated Task Title' },
         description: { type: 'string', example: 'Updated Task Description' },
-        status: { type: 'string', example: 'In Progress' }, // Статус задачи как строка, если это нужно
+        status: { type: 'string', example: 'In Progress' }, 
         subtasks: {
           type: 'array',
           items: {
@@ -65,7 +65,7 @@ export class TasksController {
               id: { type: 'string', example: 'subtaskId', nullable: true },
               title: { type: 'string', example: 'New Subtask Title' },
               description: { type: 'string', example: 'New Subtask Description', nullable: true },
-              status: { type: 'boolean', example: true }, // Измените на boolean
+              isDone: { type: 'boolean', example: true }, 
             }
           }
         }
