@@ -18,8 +18,8 @@ export class SubtasksController {
   @ApiResponse({ status: 201, description: 'Subtask successfully created.', type: SubtaskDto })
   @ApiResponse({ status: 403, description: 'Access forbidden.' })
   async createSubtask(@Body() createSubtaskDto: CreateSubtaskDto) {
-    const { taskId, title, description, status } = createSubtaskDto;
-    return this.subtasksService.createSubtask(taskId, title, description, status);
+    const { taskId, title, description, isDone } = createSubtaskDto;
+    return this.subtasksService.createSubtask(taskId, title, description, isDone);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -40,9 +40,13 @@ export class SubtasksController {
   @ApiResponse({ status: 200, description: 'Subtask successfully updated.', type: SubtaskDto })
   @ApiResponse({ status: 403, description: 'Access forbidden.' })
   @ApiResponse({ status: 404, description: 'Subtask not found.' })
-  async updateSubtask(@Request() req, @Param('subtaskId') subtaskId: string, @Body() updateSubtaskDto: UpdateSubtaskDto) {
-    const { title, description, status } = updateSubtaskDto;
-    return this.subtasksService.updateSubtask(subtaskId, req.user.userId, title, description, status);
+  async updateSubtask(
+    @Request() req, 
+    @Param('subtaskId') subtaskId: string, 
+    @Body() updateSubtaskDto: UpdateSubtaskDto
+  ) {
+    const { title, description, isDone } = updateSubtaskDto;
+    return this.subtasksService.updateSubtask(subtaskId, req.user.userId, title, description, isDone);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -52,8 +56,7 @@ export class SubtasksController {
   @ApiBody({ description: 'Data required to delete a subtask', schema: { type: 'object', properties: { taskId: { type: 'string' } } } })
   @ApiResponse({ status: 200, description: 'Subtask successfully deleted.' })
   @ApiResponse({ status: 403, description: 'Access forbidden.' })
-  async deleteSubtask(@Request() req, @Param('subtaskId') subtaskId: string) {
-    const { taskId } = req.body;
+  async deleteSubtask(@Request() req, @Param('subtaskId') subtaskId: string, @Body('taskId') taskId: string) {
     return this.subtasksService.deleteSubtask(subtaskId, taskId, req.user.userId);
   }
 }

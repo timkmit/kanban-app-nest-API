@@ -7,6 +7,6 @@ export class UpdateSubtaskDto {
   @ApiProperty({ example: 'Updated description for the subtask', description: 'Description of the subtask' })
   description?: string;
 
-  @ApiProperty({ example: 'In Progress', description: 'Current status of the subtask' })
-  status?: string;
+  @ApiProperty({ example: true, description: 'Is the subtask done' })
+  isDone?: boolean;
 }

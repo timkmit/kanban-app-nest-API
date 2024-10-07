@@ -10,6 +10,6 @@ export class CreateSubtaskDto {
   @ApiProperty({ description: 'Description of the subtask', example: 'Create the initial design for the homepage' })
   description?: string;
 
-  @ApiProperty({ description: 'Status of the subtask', example: 'Pending' })
-  status: string;
+  @ApiProperty({ description: 'Is the subtask done', example: false })
+  isDone: boolean;
 }

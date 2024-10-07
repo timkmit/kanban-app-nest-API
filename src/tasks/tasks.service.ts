@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Task } from '@prisma/client';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -73,11 +73,13 @@ export class TasksService {
     });
   }
 
+
+
   async updateTaskWithSubtasks(
     taskId: string,
     userId: string,
     updateTaskDto: UpdateTaskDto,
-    subtasks: { id?: string; title: string; description?: string; status: string }[]
+    subtasks: { id?: string; title: string; description?: string; isDone: boolean }[]
   ): Promise<Task> {
     const { title, description, status } = updateTaskDto;
 
@@ -106,55 +108,65 @@ export class TasksService {
       throw new ForbiddenException('Access Denied');
     }
 
-    return this.prisma.$transaction(async (prisma) => {
+    try {
+      return await this.prisma.$transaction(async (prisma) => {
+        const updatedTask = await prisma.task.update({
+          where: { id: taskId },
+          data: {
+            title: title ?? task.title,
+            description: description ?? task.description,
+            status: status ?? task.status,
+          },
+        });
 
-      const updatedTask = await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          title: title ?? task.title,
-          description: description ?? task.description,
-          status: status ?? task.status,
-        },
+        const subtaskIds = subtasks.map((subtask) => subtask.id).filter(Boolean);
+
+        // Delete subtasks that are not in the updated list
+        await prisma.subtask.deleteMany({
+          where: {
+            taskId: taskId,
+            id: { notIn: subtaskIds },
+          },
+        });
+
+        const subtaskPromises = subtasks.map(async (subtask) => {
+          if (subtask.id) {
+            return prisma.subtask.upsert({
+              where: { id: subtask.id },
+              update: {
+                title: subtask.title,
+                description: subtask.description,
+                isDone: subtask.isDone,
+              },
+              create: {
+                title: subtask.title,
+                description: subtask.description,
+                isDone: subtask.isDone,
+                taskId: taskId,
+              },
+            });
+          } else {
+            return prisma.subtask.create({
+              data: {
+                title: subtask.title,
+                description: subtask.description,
+                isDone: subtask.isDone,
+                taskId: taskId,
+              },
+            });
+          }
+        });
+
+        await Promise.all(subtaskPromises);
+
+        return prisma.task.findUnique({
+          where: { id: updatedTask.id },
+          include: { subtasks: true },
+        });
       });
-
-      const subtaskIds = subtasks.map((subtask) => subtask.id).filter(Boolean);
-
-      await prisma.subtask.deleteMany({
-        where: {
-          taskId: taskId,
-          id: { notIn: subtaskIds },
-        },
-      });
-
-      const subtaskPromises = subtasks.map((subtask) => {
-        if (subtask.id) {
-
-          return prisma.subtask.update({
-            where: { id: subtask.id },
-            data: {
-              title: subtask.title,
-              description: subtask.description,
-              status: subtask.status,
-            },
-          });
-        } else {
-          return prisma.subtask.create({
-            data: {
-              title: subtask.title,
-              description: subtask.description,
-              status: subtask.status,
-              taskId: taskId,
-            },
-          });
-        }
-      });
-
-      await Promise.all(subtaskPromises);
-
-      return prisma.task.findUnique({
-        where: { id: updatedTask.id },
-        include: { subtasks: true },
-      });
-    });
+    } catch (error) {
+      console.error('Failed to update or create subtasks:', error);
+      throw new InternalServerErrorException('Failed to update or create subtasks');
+    }
   }
 }

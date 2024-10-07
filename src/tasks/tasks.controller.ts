@@ -47,7 +47,7 @@ export class TasksController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('update-with-subtasks/:taskId')
-  @ApiOperation({ summary: 'Update a task with subtasks', description: 'Updates the task and its subtasks. If you specify an ID, the subtask is updated; if not, it is created. If a subtask in the database is missing from the request, it is deleted.' })
+  @ApiOperation({ summary: 'Update a task with subtasks', description: 'Updates the task and its subtasks.' })
   @ApiParam({ name: 'taskId', description: 'ID of the task to be updated' })
   @ApiBody({
     description: 'Data required to update the task and its subtasks',
@@ -56,7 +56,7 @@ export class TasksController {
       properties: {
         title: { type: 'string', example: 'Updated Task Title' },
         description: { type: 'string', example: 'Updated Task Description' },
-        status: { type: 'string', example: 'In Progress' },
+        status: { type: 'string', example: 'In Progress' }, // Статус задачи как строка, если это нужно
         subtasks: {
           type: 'array',
           items: {
@@ -65,7 +65,7 @@ export class TasksController {
               id: { type: 'string', example: 'subtaskId', nullable: true },
               title: { type: 'string', example: 'New Subtask Title' },
               description: { type: 'string', example: 'New Subtask Description', nullable: true },
-              status: { type: 'string', example: 'Completed' },
+              status: { type: 'boolean', example: true }, // Измените на boolean
             }
           }
         }
