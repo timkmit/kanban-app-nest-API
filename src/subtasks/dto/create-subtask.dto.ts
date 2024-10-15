@@ -1,15 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSubtaskDto {
-  @ApiProperty({ description: 'ID of the task the subtask belongs to', example: 'taskId123' })
+  @ApiProperty({ description: 'ID задачи, к которой принадлежит подзадача', example: '670e56384e47b0bd2e8ec90c' })
   taskId: string;
 
-  @ApiProperty({ description: 'Title of the subtask', example: 'Design homepage' })
+  @ApiProperty({ description: 'Название подзадачи', example: 'Создать макет главной страницы' })
   title: string;
 
-  @ApiProperty({ description: 'Description of the subtask', example: 'Create the initial design for the homepage' })
   description?: string;
 
-  @ApiProperty({ description: 'Is the subtask done', example: false })
   isDone: boolean;
 }

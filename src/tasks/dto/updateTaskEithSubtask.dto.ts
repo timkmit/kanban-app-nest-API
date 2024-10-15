@@ -7,8 +7,7 @@ export class UpdateTaskWithSubtasksDto {
   
     @ApiPropertyOptional({ required: false })
     description?: string;
-  
-    @ApiPropertyOptional({ required: false })
+
     status?: string;
   
     @ApiPropertyOptional({ type: [SubtaskDto], required: false })

@@ -25,7 +25,29 @@ export class TasksController {
   
   @UseGuards(JwtAuthGuard)
   @Post('create-with-subtasks')
-  @ApiResponse({ status: 201, description: 'Task created successfully.' })
+  @ApiBody({
+    description: 'Task creation with subtasks',
+    type: CreateTaskWithSubtasksDto,
+    examples: {
+      example1: {
+        summary: 'Create Task with Subtasks Example',
+        value: {
+          title: "New subtask",
+          columnId: "670e56384e47b0bd2e8ec90c",
+          description: "Same description",
+          subtasks: [
+            {
+              id: "670e57624e47b0bd2e8ec914",
+              title: "Обновленная подзадача с запроса"
+            },
+            {
+              title: "New subtask"
+            }
+          ]
+        }
+      }
+    }
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 500, description: 'Internal Server Error.' })
   async createTaskWithSubtasks(@Body() body: CreateTaskWithSubtasksDto) {
@@ -56,43 +78,41 @@ export class TasksController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch('update-with-subtasks/:taskId')
-  @ApiOperation({ summary: 'Update a task with subtasks', description: 'Updates the task and its subtasks.' })
-  @ApiParam({ name: 'taskId', description: 'ID of the task to be updated' })
-  @ApiBody({
-    description: 'Data required to update the task and its subtasks',
-    schema: {
-      type: 'object',
-      properties: {
-        title: { type: 'string', example: 'Updated Task Title' },
-        description: { type: 'string', example: 'Updated Task Description' },
-        status: { type: 'string', example: 'In Progress' }, 
-        subtasks: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'subtaskId', nullable: true },
-              title: { type: 'string', example: 'New Subtask Title' },
-              description: { type: 'string', example: 'New Subtask Description', nullable: true },
-              isDone: { type: 'boolean', example: true }, 
-            }
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ status: 200, description: 'Task and subtasks successfully updated.' })
-  @ApiResponse({ status: 403, description: 'Access forbidden.' })
-  @ApiResponse({ status: 404, description: 'Task not found.' })
-  async updateTaskWithSubtasks(
-    @Param('taskId') taskId: string,
-    @Request() req,
-    @Body() body,
-  ) {
-    const { title, description, status, subtasks, columnId } = body;
-    return this.tasksService.updateTaskWithSubtasks(taskId, req.user.userId, { title, description, status }, subtasks, columnId);
-  }
+@Patch('update-with-subtasks/:taskId')
+@ApiOperation({ summary: 'Update a task with subtasks', description: 'Updates the task and its subtasks.' })
+@ApiParam({ name: 'taskId', description: 'ID of the task to be updated' })
+@ApiBody({
+  description: 'Data required to update the task and its subtasks',
+  schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', example: 'New subtask' },
+      columnId: { type: 'string', example: '670e56384e47b0bd2e8ec90c' },
+      description: { type: 'string', example: 'Same description' },
+      subtasks: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '670ea37400f035699c997de5', nullable: true },
+            title: { type: 'string', example: 'Обновленная подзадача с запроса' },
+          },
+        },
+      },
+    },
+  },
+})
+@ApiResponse({ status: 200, description: 'Task and subtasks successfully updated.' })
+@ApiResponse({ status: 403, description: 'Access forbidden.' })
+@ApiResponse({ status: 404, description: 'Task not found.' })
+async updateTaskWithSubtasks(
+  @Param('taskId') taskId: string,
+  @Request() req,
+  @Body() body,
+) {
+  const { title, description, status, subtasks, columnId } = body;
+  return this.tasksService.updateTaskWithSubtasks(taskId, req.user.userId, { title, description, status }, subtasks, columnId);
+}
 
   @UseGuards(JwtAuthGuard)
   @Delete(':taskId')
