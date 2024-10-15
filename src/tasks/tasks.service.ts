@@ -20,25 +20,39 @@ export class TasksService {
   }
 
   async createTaskWithSubtasks(body: CreateTaskWithSubtasksDto) {
-    const { columnId, title, description, status, subtasks } = body;
+    const { columnId, title, subtasks } = body;
   
     try {
       const task = await this.prisma.task.create({
         data: {
           title,
-          description,
-          status,
+          description: "", 
+          status: "",
           columnId,
           subtasks: {
-            create: subtasks,
+            create: subtasks.map((subtask) => ({
+              title: subtask.title,
+              description: "", 
+              isDone: false, 
+            })),
           },
         },
         include: {
-          subtasks: true, 
+          subtasks: true,
         },
       });
   
-      return { task };
+      const filteredTask = {
+        id: task.id,
+        title: task.title,
+        columnId: task.columnId,
+        subtasks: task.subtasks.map(subtask => ({
+          id: subtask.id,
+          title: subtask.title,
+        })),
+      };
+  
+      return { task: filteredTask };
     } catch (error) {
       console.error('Error creating task with subtasks:', error);
       throw new InternalServerErrorException('Error creating task with subtasks');
@@ -108,93 +122,105 @@ export class TasksService {
     updateTaskDto: UpdateTaskDto,
     subtasks: { id?: string; title: string; description?: string; isDone: boolean }[],
     newColumnId: string
-): Promise<Task> {
+  ): Promise<{ task: { id: string; title: string; columnId: string; subtasks: { id: string; title: string }[] } }> {
     const { title, description, status } = updateTaskDto;
-
+  
     const task = await this.prisma.task.findUnique({
-        where: { id: taskId },
-        include: { subtasks: true },
+      where: { id: taskId },
+      include: { subtasks: true },
     });
-
+  
     if (!task) {
-        throw new NotFoundException('Task not found');
+      throw new NotFoundException('Task not found');
     }
-
+  
     const column = await this.prisma.column.findUnique({
-        where: { id: newColumnId },
+      where: { id: newColumnId },
     });
-
+  
     if (!column) {
-        throw new NotFoundException('Column not found');
+      throw new NotFoundException('Column not found');
     }
-
+  
     const board = await this.prisma.board.findUnique({
-        where: { id: column.boardId },
+      where: { id: column.boardId },
     });
-
+  
     if (board.userId !== userId) {
-        throw new ForbiddenException('Access Denied');
+      throw new ForbiddenException('Access Denied');
     }
-
+  
     try {
-        return await this.prisma.$transaction(async (prisma) => {
-            const updatedTask = await prisma.task.update({
-                where: { id: taskId },
-                data: {
-                    title: title ?? task.title,
-                    description: description ?? task.description,
-                    status: status ?? task.status,
-                    columnId: newColumnId, 
-                },
-            });
-
-            const subtaskIds = subtasks.map((subtask) => subtask.id).filter(Boolean);
-
-            await prisma.subtask.deleteMany({
-                where: {
-                    taskId: taskId,
-                    id: { notIn: subtaskIds },
-                },
-            });
-
-            const subtaskPromises = subtasks.map(async (subtask) => {
-                if (subtask.id) {
-                    return prisma.subtask.upsert({
-                        where: { id: subtask.id },
-                        update: {
-                            title: subtask.title,
-                            description: subtask.description,
-                            isDone: subtask.isDone,
-                        },
-                        create: {
-                            title: subtask.title,
-                            description: subtask.description,
-                            isDone: subtask.isDone,
-                            taskId: taskId,
-                        },
-                    });
-                } else {
-                    return prisma.subtask.create({
-                        data: {
-                            title: subtask.title,
-                            description: subtask.description,
-                            isDone: subtask.isDone,
-                            taskId: taskId,
-                        },
-                    });
-                }
-            });
-
-            await Promise.all(subtaskPromises);
-
-            return prisma.task.findUnique({
-                where: { id: updatedTask.id },
-                include: { subtasks: true },
-            });
+      return await this.prisma.$transaction(async (prisma) => {
+        const updatedTask = await prisma.task.update({
+          where: { id: taskId },
+          data: {
+            title: title ?? task.title,
+            description: description ?? "",
+            status: status ?? "",
+            columnId: newColumnId,
+          },
         });
+  
+        const subtaskIds = subtasks.map((subtask) => subtask.id).filter(Boolean);
+  
+        await prisma.subtask.deleteMany({
+          where: {
+            taskId: taskId,
+            id: { notIn: subtaskIds },
+          },
+        });
+  
+        const subtaskPromises = subtasks.map(async (subtask) => {
+          if (subtask.id) {
+            return prisma.subtask.upsert({
+              where: { id: subtask.id },
+              update: {
+                title: subtask.title,
+                description: subtask.description ?? "",
+                isDone: subtask.isDone ?? false,
+              },
+              create: {
+                title: subtask.title,
+                description: subtask.description ?? "",
+                isDone: subtask.isDone ?? false,
+                taskId: taskId,
+              },
+            });
+          } else {
+            return prisma.subtask.create({
+              data: {
+                title: subtask.title,
+                description: subtask.description ?? "",
+                isDone: subtask.isDone ?? false,
+                taskId: taskId,
+              },
+            });
+          }
+        });
+  
+        await Promise.all(subtaskPromises);
+  
+        const taskWithSubtasks = await prisma.task.findUnique({
+          where: { id: updatedTask.id },
+          include: { subtasks: true },
+        });
+  
+        const filteredTask = {
+          id: taskWithSubtasks.id,
+          title: taskWithSubtasks.title,
+          columnId: taskWithSubtasks.columnId,
+          subtasks: taskWithSubtasks.subtasks.map(subtask => ({
+            id: subtask.id,
+            title: subtask.title,
+          })),
+        };
+  
+        return { task: filteredTask };
+      });
     } catch (error) {
-        console.error('Failed to update or create subtasks:', error);
-        throw new InternalServerErrorException('Failed to update or create subtasks');
+      console.error('Failed to update or create subtasks:', error);
+      throw new InternalServerErrorException('Failed to update or create subtasks');
     }
-}
+  }
 }
