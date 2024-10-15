@@ -5,6 +5,7 @@ import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/s
 import { CreateTaskDto } from './dto/create-task.dto';
 import { TaskDto } from './dto/task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { CreateTaskWithSubtasksDto } from './dto/createWithSubtasck.dto';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -20,6 +21,15 @@ export class TasksController {
   async createTask(@Body() body: CreateTaskDto) {
     const { columnId, title, description, status } = body;
     return this.tasksService.createTask(columnId, title, description, status);
+  }
+  
+  @UseGuards(JwtAuthGuard)
+  @Post('create-with-subtasks')
+  @ApiResponse({ status: 201, description: 'Task created successfully.' })
+  @ApiResponse({ status: 400, description: 'Bad Request.' })
+  @ApiResponse({ status: 500, description: 'Internal Server Error.' })
+  async createTaskWithSubtasks(@Body() body: CreateTaskWithSubtasksDto) {
+    return this.tasksService.createTaskWithSubtasks(body);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -80,8 +90,8 @@ export class TasksController {
     @Request() req,
     @Body() body,
   ) {
-    const { title, description, status, subtasks } = body;
-    return this.tasksService.updateTaskWithSubtasks(taskId, req.user.userId, { title, description, status }, subtasks);
+    const { title, description, status, subtasks, columnId } = body;
+    return this.tasksService.updateTaskWithSubtasks(taskId, req.user.userId, { title, description, status }, subtasks, columnId);
   }
 
   @UseGuards(JwtAuthGuard)
