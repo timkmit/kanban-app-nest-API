@@ -45,8 +45,8 @@ export class SubtasksController {
     @Param('subtaskId') subtaskId: string, 
     @Body() updateSubtaskDto: UpdateSubtaskDto
   ) {
-    const { title, description, isDone } = updateSubtaskDto;
-    return this.subtasksService.updateSubtask(subtaskId, req.user.userId, title, description, isDone);
+    const { title, isDone } = updateSubtaskDto; 
+    return this.subtasksService.updateSubtask(subtaskId, req.user.userId, title, isDone);
   }
 
   @UseGuards(JwtAuthGuard)
