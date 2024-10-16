@@ -87,20 +87,28 @@ async createTaskWithSubtasks(body: CreateTaskWithSubtasksDto) {
     if (!task) {
       throw new NotFoundException('Task not found');
     }
-  
+
     await this.prisma.task.update({
       where: { id: taskId },
       data: {
         columnId: newColumnId,
       },
     });
-  
+
     const updatedColumn = await this.prisma.column.findUnique({
       where: { id: newColumnId },
       include: {
         tasks: {
-          include: {
-            subtasks: true,
+          select: {
+            id: true,
+            title: true,
+            description: true,  
+            subtasks: {
+              select: {
+                id: true,
+                title: true,  
+              },
+            },
           },
         },
       },
