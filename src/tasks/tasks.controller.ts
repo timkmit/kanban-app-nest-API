@@ -114,6 +114,18 @@ async updateTaskWithSubtasks(
   return this.tasksService.updateTaskWithSubtasks(taskId, req.user.userId, { title, description, status }, subtasks, columnId);
 }
 
+@UseGuards(JwtAuthGuard)
+@Patch('move-task/:taskId')
+@ApiOperation({ summary: 'Move task to a new column', description: 'Moves a task to a new column and returns the updated column with tasks and subtasks.' })
+@ApiParam({ name: 'taskId', description: 'ID of the task to be moved' })
+@ApiBody({ schema: { type: 'object', properties: { newColumnId: { type: 'string' } } } })
+@ApiResponse({ status: 200, description: 'Task successfully moved and column updated.' })
+@ApiResponse({ status: 404, description: 'Task or column not found.' })
+async moveTaskToNewColumn(@Param('taskId') taskId: string, @Body() body: { newColumnId: string }) {
+  const { newColumnId } = body;
+  return this.tasksService.moveTaskToNewColumn(taskId, newColumnId);
+}
+
   @UseGuards(JwtAuthGuard)
   @Delete(':taskId')
   @ApiOperation({ summary: 'Delete a task', description: 'Deletes a task from a column.' })

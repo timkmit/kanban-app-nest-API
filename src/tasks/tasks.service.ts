@@ -79,6 +79,40 @@ async createTaskWithSubtasks(body: CreateTaskWithSubtasksDto) {
     });
   }
 
+  async moveTaskToNewColumn(taskId: string, newColumnId: string): Promise<any> {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+    });
+  
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+  
+    await this.prisma.task.update({
+      where: { id: taskId },
+      data: {
+        columnId: newColumnId,
+      },
+    });
+  
+    const updatedColumn = await this.prisma.column.findUnique({
+      where: { id: newColumnId },
+      include: {
+        tasks: {
+          include: {
+            subtasks: true,
+          },
+        },
+      },
+    });
+  
+    if (!updatedColumn) {
+      throw new NotFoundException('New column not found');
+    }
+  
+    return updatedColumn;
+  }
+
   async deleteTask(taskId: string, columnId: string, userId: string): Promise<void> {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     const column = await this.prisma.column.findUnique({ where: { id: columnId } });
