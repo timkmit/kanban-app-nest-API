@@ -62,16 +62,29 @@ export class ColumnsService {
       where: { id: boardId },
       include: { boardShares: true },
     });
-
+  
     if (!board || (board.userId !== userId && !board.boardShares.some(share => share.userId === userId))) {
       throw new ForbiddenException('Access Denied');
     }
-
+  
     const column = await this.prisma.column.findUnique({ where: { id: columnId } });
-
+  
     if (!column) {
       throw new ForbiddenException('Column not found');
     }
+
+    const tasks = await this.prisma.task.findMany({
+      where: { columnId: columnId },
+    });
+
+    const taskIds = tasks.map(task => task.id);
+    await this.prisma.subtask.deleteMany({
+      where: { taskId: { in: taskIds } },
+    });
+
+    await this.prisma.task.deleteMany({
+      where: { columnId: columnId },
+    });
 
     await this.prisma.column.delete({
       where: { id: columnId },
