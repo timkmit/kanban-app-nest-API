@@ -58,6 +58,7 @@ async createTaskWithSubtasks(body: CreateTaskWithSubtasksDto) {
           subtasks: task.subtasks.map(subtask => ({
               id: subtask.id,
               title: subtask.title,
+              isDone: subtask.isDone, 
           })),
       };
 
@@ -184,7 +185,7 @@ async updateTaskWithSubtasks(
   updateTaskDto: UpdateTaskDto,
   subtasks: { id?: string; title: string; isDone: boolean }[],
   newColumnId: string
-): Promise<{ task: { id: string; title: string; columnId: string; description: string; subtasks: { id: string; title: string }[] } }> {
+): Promise<{ task: { id: string; title: string; columnId: string; description: string; subtasks: { id: string; title: string; isDone: boolean }[] } }> {
   const { title, description, status } = updateTaskDto;
 
   const task = await this.prisma.task.findUnique({
@@ -268,6 +269,7 @@ async updateTaskWithSubtasks(
               subtasks: taskWithSubtasks.subtasks.map(subtask => ({
                   id: subtask.id,
                   title: subtask.title,
+                  isDone: subtask.isDone,
               })),
           };
 

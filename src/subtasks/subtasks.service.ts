@@ -5,18 +5,24 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SubtasksService {
   constructor(private prisma: PrismaService) {}
 
-  async createSubtask(taskId: string, title: string, description?: string, isDone?: boolean): Promise<{ id: string; title: string; taskId: string }> {
+  async createSubtask(
+    taskId: string,
+    title: string,
+    description?: string,
+    isDone?: boolean
+  ): Promise<{ id: string; title: string; taskId: string; isDone: boolean }> {
     return this.prisma.subtask.create({
       data: {
         title,
         description: description ?? "", 
-        isDone: isDone ?? false, 
+        isDone: isDone ?? false,
         taskId,
       },
       select: {
         id: true,
         title: true,
-        taskId: true, 
+        isDone: true,
+        taskId: true,
       },
     });
   }
@@ -27,6 +33,7 @@ export class SubtasksService {
       select: {
         id: true,
         title: true,
+        isDone: true,
         taskId: true, 
       },
     });
@@ -60,7 +67,7 @@ export class SubtasksService {
     userId: string, 
     title?: string, 
     isDone?: boolean | string
-  ): Promise<{ id: string; title: string; taskId: string }> {
+  ): Promise<{ id: string; title: string; taskId: string; isDone: boolean }> {
     const subtask = await this.prisma.subtask.findUnique({
       where: { id: subtaskId },
     });
@@ -103,7 +110,8 @@ export class SubtasksService {
     return {
       id: updatedSubtask.id,
       title: updatedSubtask.title,
-      taskId: updatedSubtask.taskId, 
+      isDone: updatedSubtask.isDone,
+      taskId: updatedSubtask.taskId,
     };
   }
 }

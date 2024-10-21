@@ -6,5 +6,6 @@ export class UpdateSubtaskDto {
 
   description?: string;
 
+  @ApiProperty({ description: 'Статус подзадачи', example: false })
   isDone?: boolean;
 }

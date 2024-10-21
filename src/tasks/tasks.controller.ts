@@ -37,11 +37,10 @@ export class TasksController {
           description: "Same description",
           subtasks: [
             {
-              id: "670e57624e47b0bd2e8ec914",
-              title: "Обновленная подзадача с запроса"
+              title: "New subtask 1",
             },
             {
-              title: "New subtask"
+              title: "New subtask 2"
             }
           ]
         }
@@ -77,7 +76,7 @@ export class TasksController {
     return this.tasksService.updateTask(taskId, req.user.userId, title, description, status);
   }
 
-  @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Patch('update-with-subtasks/:taskId')
 @ApiOperation({ summary: 'Update a task with subtasks', description: 'Updates the task and its subtasks.' })
 @ApiParam({ name: 'taskId', description: 'ID of the task to be updated' })
@@ -96,6 +95,7 @@ export class TasksController {
           properties: {
             id: { type: 'string', example: '670ea37400f035699c997de5', nullable: true },
             title: { type: 'string', example: 'Обновленная подзадача с запроса' },
+            isDone: { type: 'boolean', example: false },
           },
         },
       },

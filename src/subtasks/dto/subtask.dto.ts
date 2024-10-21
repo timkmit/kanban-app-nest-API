@@ -9,6 +9,7 @@ export class SubtaskDto {
 
   description?: string;
 
+  @ApiProperty({ description: 'Статус подзадачи', example: false })
   isDone: boolean;
 
   @ApiProperty({ description: 'ID of the task the subtask belongs to', example: 'taskId123' })

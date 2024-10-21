@@ -9,5 +9,6 @@ export class CreateSubtaskDto {
 
   description?: string;
 
+  @ApiProperty({ description: 'Статус подзадачи', example: false })
   isDone: boolean;
 }

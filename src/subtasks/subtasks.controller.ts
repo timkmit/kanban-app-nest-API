@@ -15,7 +15,7 @@ export class SubtasksController {
   @Post('create')
   @ApiOperation({ summary: 'Create a subtask', description: 'Creates a new subtask for a specified task.' })
   @ApiBody({ type: CreateSubtaskDto, description: 'Data required to create a new subtask' })
-  @ApiResponse({ status: 201, description: 'Subtask successfully created.', type: SubtaskDto })
+  @ApiResponse({ status: 201, description: 'Subtask successfully created.'})
   @ApiResponse({ status: 403, description: 'Access forbidden.' })
   async createSubtask(@Body() createSubtaskDto: CreateSubtaskDto) {
     const { taskId, title, description, isDone } = createSubtaskDto;
