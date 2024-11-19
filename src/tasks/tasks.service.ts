@@ -122,17 +122,29 @@ async createTaskWithSubtasks(body: CreateTaskWithSubtasksDto) {
     return updatedColumn;
   }
 
-  async deleteTask(taskId: string, columnId: string, userId: string): Promise<void> {
-    const task = await this.prisma.task.findUnique({ where: { id: taskId } });
-    const column = await this.prisma.column.findUnique({ where: { id: columnId } });
-    const board = await this.prisma.board.findUnique({ where: { id: column.boardId } });
-  
-    if (!task || !column || board.userId !== userId) {
+  async deleteTask(taskId: string, userId: string): Promise<void> {
+
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        column: {
+          include: {
+            board: true,
+          },
+        },
+      },
+    });
+
+    if (!task) {
+      throw new NotFoundException('Task not found');
+    }
+
+    if (task.column.board.userId !== userId) {
       throw new ForbiddenException('Access Denied');
     }
 
     await this.prisma.subtask.deleteMany({
-      where: { taskId },
+      where: { taskId: taskId },
     });
 
     await this.prisma.task.delete({
