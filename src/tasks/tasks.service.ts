@@ -126,10 +126,14 @@ async createTaskWithSubtasks(body: CreateTaskWithSubtasksDto) {
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     const column = await this.prisma.column.findUnique({ where: { id: columnId } });
     const board = await this.prisma.board.findUnique({ where: { id: column.boardId } });
-
+  
     if (!task || !column || board.userId !== userId) {
       throw new ForbiddenException('Access Denied');
     }
+
+    await this.prisma.subtask.deleteMany({
+      where: { taskId },
+    });
 
     await this.prisma.task.delete({
       where: { id: taskId },
